@@ -1,26 +1,80 @@
+import { gql, useQuery } from "@apollo/client";
+import { DefaultUi, Player, Youtube } from "@vime/react";
 import { CaretRight, DiscordLogo, FileArrowDown, Image, Lightning } from "phosphor-react";
 
-export function Video() {
+import '@vime/core/themes/default.css'
+
+const GET_LESSON_BY_SLUG_QUERY = gql`
+    query GetLessonBySlug($slug: String) {
+        lesson(where: {slug: $slug}) {
+            title
+            videoId
+            description
+            teacher {
+            name
+            bio
+            avatarURL
+            }
+        }
+    }`
+
+interface GetLessonBySlugResponse {
+    lesson: {
+        title: string,
+        videoId: string,
+        description: string,
+        teacher: {
+            name: string,
+            bio: string,
+            avatarURL: string,
+        }
+    }
+}
+
+interface VideoProps {
+    lessonSlug: string
+}
+
+export function Video(props: VideoProps) {
+    const { data } = useQuery<GetLessonBySlugResponse>(GET_LESSON_BY_SLUG_QUERY, {
+        variables: {
+            slug: props.lessonSlug
+        }
+    })
+
+    if (!data) {
+        return (
+            <div className="flex-1">
+                <p>Carregando...</p>
+            </div>
+        )
+    }
+
     return (
         <div className="flex-1">
             <div className="bg-black flex justify-center">
-                <div className="w-full h-full max-w-[1100px] max-h-[60vh] aspect-video"></div>
+                <div className="w-full h-full max-w-[1100px] max-h-[60vh] aspect-video">
+                    <Player>
+                        <Youtube videoId={data.lesson.videoId}/>
+                        <DefaultUi />
+                    </Player>
+                </div>
             </div>
 
             <div className="p-8 max-w-[1100px] mx-auto">
                 <div className="flex items-start gap-16 mb-10">
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold">
-                            Aula 01- Abertura do Ignite lab
+                            {data.lesson.title}
                         </h1>
                         <p className="mt-4 text-gray-200 leading-relaxed">
-                            Nessa aula vamos dar início ao projeto criando a estrutura base da aplicação utilizando ReactJS, Vite e TailwindCSS. Vamos também realizar o setup do nosso projeto no GraphCMS criando as entidades da aplicação e integrando a API GraphQL gerada pela plataforma no nosso front-end utilizando Apollo Client.
+                            {data.lesson.description}
                         </p>
                         <div className="flex items-center gap-4 mt-6">
-                            <img src="https://github.com/diego3g.png" className="h-16 w-16 rounded-full border-2 border-blue-500" alt="" />
+                            <img src={data.lesson.teacher.avatarURL} className="h-16 w-16 rounded-full border-2 border-blue-500" alt="" />
                             <div className="leading-relaxed">
-                                <strong className="font-bold text-2xl block">Diego Fernandes</strong>
-                                <span className="text-gray-200 text-sm block">CTO at Rocketseat</span>
+                                <strong className="font-bold text-2xl block">{data.lesson.teacher.name}</strong>
+                                <span className="text-gray-200 text-sm block">{data.lesson.teacher.bio}</span>
                             </div>
                         </div>
                     </div>
